@@ -1,0 +1,28 @@
+From 2ac9d060f44f011affa0ff90eca935f303bcb291 Mon Sep 17 00:00:00 2001
+From: Leon Schuermann <leon@is.currently.online>
+Date: Fri, 27 Dec 2024 11:56:55 -0500
+Subject: [PATCH] app/meson.build: use mslib artifacts precompiled by Nix
+
+---
+ app/meson.build | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/app/meson.build b/app/meson.build
+index 6e60b0b..e231650 100644
+--- a/app/meson.build
++++ b/app/meson.build
+@@ -125,8 +125,7 @@ mslib = custom_target(
+     'mslib',
+     output: ['mslib.a', 'mslib.h'],
+     input: 'ms-tools/lib/mslib.go',
+-    command: ['go', 'build', '-C',  join_paths(meson.current_source_dir(), 'ms-tools/lib'), '-o', join_paths(meson.current_build_dir(), '@OUTPUT0@'), '-buildmode=c-archive', 'mslib.go']
+-    
++    command: ['cp', '${MSLIB_A_PRECOMPILED}', '${MSLIB_H_PRECOMPILED}', join_paths(meson.current_build_dir(), '@OUTDIR@')]
+ )
+ 
+ include_directories = [
+
+base-commit: 2443f342344bc18eebffa8b5db1db499ab5aab5e
+-- 
+2.47.0
+

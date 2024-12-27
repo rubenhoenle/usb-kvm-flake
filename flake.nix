@@ -72,6 +72,29 @@
           '';
         };
 
+        ms-tools-lib = pkgs.buildGoModule {
+          name = "usbkvm-ms-tools-lib";
+
+          src = "${repo}/app/ms-tools";
+          vendorHash = "sha256-imHpsos7RDpATSZFWRxug67F7VgjRTT1SkLt7cWk6tU=";
+
+          buildInputs = with pkgs; [
+            hidapi
+            udev
+          ];
+
+          prePatch = ''
+            rm lib/mslib-test.c
+          '';
+
+          buildPhase = ''
+            mkdir -p $out/
+            go build -C lib/ -o $out/ -buildmode=c-archive mslib.go
+          '';
+
+          installPhase = "true";
+        };
+
         app = pkgs.stdenv.mkDerivation {
           name = "usbkvm-app";
           src = repo;
@@ -88,25 +111,43 @@
 
             pkg-config
             python3
+            ms-tools-lib
           ];
+
           nativeBuildInputs = with pkgs; [
-            cmake
+            meson
+            ninja
           ];
-          buildPhase = ''
-            ls -lisa .
 
-            cp ${fw-boot}/build fw/boot
-            cp ${fw-usbkvm}/build fw/usbkvm
+          prePatch = ''
+            cp -rf ${fw-boot}/build fw/boot
+            cp -rf ${fw-usbkvm}/build fw/usbkvm
+          '';
 
-            cd app
-            mkdir build
-            ${pkgs.meson}/bin/meson setup build
-            #${pkgs.meson}/bin/meson compile -C build
+          patches = [
+            ./0001-app-meson.build-use-mslib-artifacts-precompiled-by-N.patch
+          ];
+
+          postPatch = ''
+            ${pkgs.envsubst}/bin/envsubst -i app/meson.build -o app/meson.build.patched
+            mv app/meson.build.patched app/meson.build
+            cd app/
           '';
-          installPhase = ''
-            mkdir -p $out/bin
-            #cp app/build/usbkvm $out/bin
-          '';
+
+          MSLIB_A_PRECOMPILED = "${ms-tools-lib}/mslib.a";
+          MSLIB_H_PRECOMPILED = "${ms-tools-lib}/mslib.h";
+
+          # buildPhase = ''
+          #   # ls -lisa .
+          #   # cd app
+          #   # mkdir build
+          #   ${pkgs.meson}/bin/meson setup build
+          #   #${pkgs.meson}/bin/meson compile -C build
+          # '';
+          # installPhase = ''
+          #   mkdir -p $out/bin
+          #   #cp app/build/usbkvm $out/bin
+          # '';
         };
 
         app-from-tarball = pkgs.stdenv.mkDerivation {
