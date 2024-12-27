@@ -38,7 +38,7 @@
           name = "usbkvm-fw-boot";
           src = repo;
           nativeBuildInputs = with pkgs; [
-            python3 
+            python3
             gcc-arm-embedded-9
           ];
           buildPhase = ''
@@ -55,13 +55,12 @@
           name = "usbkvm-fw-usbkvm";
           src = repo;
           nativeBuildInputs = with pkgs; [
-            #python3 
-            #gcc-arm-embedded-9
-          ];
-          buildInputs = with pkgs; [
-            python3 
+            python3
             gcc-arm-embedded-9
           ];
+          patchPhase = ''
+            patchShebangs fw/usbkvm/write_header.py
+          '';
           buildPhase = ''
             cd fw/usbkvm
             ls -lisa
